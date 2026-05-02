@@ -1,0 +1,48 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: flutter-actions/setup-flutter@v3
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK (arm64)
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Build APK (armeabi)
+        run: flutter build apk --release --target-platform android-armeabi-v7a
+
+      - name: Build APK (universal)
+        run: flutter build apk --release
+
+      - name: Create SHA1 checksums
+        run: |
+          sha1sum build/app/outputs/flutter-apk/app-release.apk > build/app/outputs/flutter-apk/app-release.apk.sha1
+          sha1sum build/app/outputs/flutter-apk/app-arm64-v8a-release.apk > build/app/outputs/flutter-apk/app-arm64-v8a-release.apk.sha1
+          sha1sum build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk > build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk.sha1
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha1
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk.sha1
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk.sha1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
